@@ -1,0 +1,77 @@
+#!/bin/bash
+
+clear
+
+################################################################################
+### Error handling functions
+
+# trap and abort on Ctrl-c
+control_c()
+{
+  echo "Build aborted"
+  exit 1
+}
+trap control_c SIGINT
+
+# exit if command fails
+try()
+{
+  # run the command
+  $@
+
+  # save the exit code
+  __exit_code__=$?
+
+  # check the exit code
+  if [ $__exit_code__ -ne 0 ] ; then
+    exit $__exit_code__
+  fi
+}
+
+################################################################################
+### Prepare for build and execution
+
+# Get to the root
+root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+echo "Moving to project root $root"
+
+# If the first argument is wipe, then wipe instead of building
+if [ "$1" = "wipe" ] ; then
+  echo "Deleting build/ directory"
+  rm -rf build
+  exit 0
+fi
+
+# Ensure that build/ contains the most up-to-date code
+echo "Updating build/ directory"
+
+mkdir -p build
+cp -ruf src/*  build
+cp -ruf lib/* build
+
+echo
+
+################################################################################
+### Make and run
+
+# make
+echo "========================================"
+echo "Building executable"
+echo
+
+cd build
+try make
+
+echo
+
+# run the executable
+echo "========================================"
+echo "Running executable"
+echo
+
+try ./gownta $@
+
+echo
+
+exit 0
+
